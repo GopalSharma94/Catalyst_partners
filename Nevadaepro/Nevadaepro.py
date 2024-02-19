@@ -1,18 +1,15 @@
 from scrapy import Selector
 import re
 import requests
+import json
 
-download_path = 'C:/D/Guggenheim/nevadaepro/download/'
-data_path = 'C:/D/Guggenheim/nevadaepro/data/'
-
+data_path = 'C:\\Users\\ASUS\\Downloads\\Catalyst_partners\\Nevadaepro\\'
+download_path = 'C:\\Users\\ASUS\\Downloads\\Catalyst_partners\\Nevadaepro\\Doc\\'
 url = 'https://nevadaepro.com/bso/view/search/external/advancedSearchBid.xhtml?openBids=true'
 
 #################### Page & Bid ID ##############################
 
-Bid_Number_li = []
-Description_li = []
-Bid_Opening_Date_li = []
-Purchaser_li = []
+data_list = []
 for page in range(0,50,25):
     print(page)
     headers = {
@@ -69,7 +66,6 @@ for page in range(0,50,25):
     response_1 = Selector(text=resp_1.text)
 
     Bid_Solicitation_data = response_1.xpath('//tr[@class="ui-widget-content ui-datatable-even"]')
-
 
     for bid in Bid_Solicitation_data:
         Bid_Solicitation = bid.xpath('.//a/text()').extract_first()
@@ -128,11 +124,14 @@ for page in range(0,50,25):
         Ship_to_Address = ' '.join(map(str,data[1].xpath('//*[contains(text(), "Ship-to Address:")]//following-sibling::td[1]/text()').extract())).strip()
         Bill_to_Address = ' '.join(map(str,data[1].xpath('//*[contains(text(), "Bill-to Address:")]//following-sibling::td[1]//text()').extract())).strip()
 
-        Bid_Number_li.append(Bid_Number)
-        Description_li.append(Description)
-        Bid_Opening_Date_li.append(Bid_Opening_Date)
-        Purchaser_li.append(Purchaser)
-
+        nevadaepro_dict = {'Bid_Number': Bid_Number, 'Description': Description, 'Bid_Opening_Date': Bid_Opening_Date,
+                           'Purchaser': Purchaser,"Organization":Organization,"Department":Department,"Location":Location,
+                           "Fiscal_Year":Fiscal_Year,"Type_Code":Type_Code,"Allow_Electronic_Quote":Allow_Electronic_Quote,
+                           "Alternate_Id":Alternate_Id,"Required_Date":Required_Date,"Available_Date":Available_Date,
+                           "Info_Contact":Info_Contact,"Bid_Type":Bid_Type,"Informal_Bid_Flag":Informal_Bid_Flag,"Purchase_Method":Purchase_Method,
+                           "Pre_Bid_Conference":Pre_Bid_Conference,"Bulletin_Desc":Bulletin_Desc,"Ship_to_Address":Ship_to_Address,
+                           "Bill_to_Address":Bill_to_Address}
+        data_list.append({str(Bid_Number):nevadaepro_dict})
     ########################### Download files ######################################
         File_Attachments_list = data[1].xpath('//*[contains(text(), "File Attachments")]//following-sibling::td[1]/a')
 
@@ -192,7 +191,6 @@ for page in range(0,50,25):
                 with open(download_path+Bid_Number+'_'+download_file_no+'.pdf', 'wb') as f:
                     f.write(request_file.content)
 
-
-nevadaepro_dict = {'Bid_Number':Bid_Number_li,'Description':Description_li,'Bid_Opening_Date':Bid_Opening_Date_li,'Purchaser':Purchaser_li}
-
+with open(data_path +'data.json', 'w') as f:
+    json.dump(data_list, f)
 print("Hi")
